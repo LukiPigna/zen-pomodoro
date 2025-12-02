@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Play, Pause, RotateCcw, Settings2, CheckCircle2, Clock } from 'lucide-react';
+import { Play, Pause, RotateCcw, Settings2, CheckCircle2, Clock, Download } from 'lucide-react';
 import { TimerMode } from './types';
 import { TimerDisplay } from './components/TimerDisplay';
 
@@ -14,6 +14,9 @@ const App: React.FC = () => {
   // Settings
   const [baseFocusTime, setBaseFocusTime] = useState<number>(25); // Minutes
   const [showSettings, setShowSettings] = useState<boolean>(false);
+
+  // PWA Install Prompt
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   
   // Audio Context for Beep
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -35,6 +38,22 @@ const App: React.FC = () => {
   const maxTime = durations[mode];
 
   // --- Effects ---
+
+  // PWA Install Event Listener
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: Event) => {
+      // Prevent the mini-infobar from appearing on mobile
+      e.preventDefault();
+      // Stash the event so it can be triggered later.
+      setDeferredPrompt(e);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
 
   // Timer Tick
   useEffect(() => {
@@ -68,6 +87,16 @@ const App: React.FC = () => {
   }, []);
 
   // --- Handlers ---
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+    // Show the install prompt
+    deferredPrompt.prompt();
+    // Wait for the user to respond to the prompt
+    const { outcome } = await deferredPrompt.userChoice;
+    // We've used the prompt, and can't use it again, throw it away
+    setDeferredPrompt(null);
+  };
 
   const requestNotificationPermission = () => {
     if ('Notification' in window && Notification.permission !== 'granted') {
@@ -289,6 +318,17 @@ const App: React.FC = () => {
                         <span className={`text-xl font-light ${getAccentColor()}`}>{Math.floor(baseFocusTime * 0.6)}m</span>
                      </div>
                 </div>
+
+                {/* Install Button (Only visible if prompt is available) */}
+                {deferredPrompt && (
+                    <button 
+                        onClick={handleInstallClick}
+                        className={`w-full py-4 mb-4 bg-white text-black rounded-xl transition-all uppercase tracking-widest text-xs font-bold flex items-center justify-center gap-2`}
+                    >
+                        <Download size={16} />
+                        Instalar App
+                    </button>
+                )}
 
                 <button 
                     onClick={() => {

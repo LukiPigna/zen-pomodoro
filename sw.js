@@ -1,9 +1,13 @@
-const CACHE_NAME = 'zenpomodoro-v2';
+const CACHE_NAME = 'zenpomodoro-v3';
 const urlsToCache = [
   './',
   './index.html',
   './manifest.json',
-  './public/icon.svg'
+  './public/icon.svg',
+  './index.tsx',
+  './App.tsx',
+  './types.ts',
+  './components/TimerDisplay.tsx'
 ];
 
 self.addEventListener('install', event => {
@@ -32,7 +36,6 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
-  // Estrategia: Cache First, luego Network (y actualiza caché si es un recurso externo)
   event.respondWith(
     caches.match(event.request)
       .then(response => {
@@ -40,22 +43,19 @@ self.addEventListener('fetch', event => {
           return response;
         }
         
-        // Si no está en caché, lo pedimos a la red
         return fetch(event.request).then(
           function(response) {
-            // Verificamos si la respuesta es válida
             if(!response || response.status !== 200 || response.type !== 'basic' && response.type !== 'cors') {
               return response;
             }
 
-            // Clonamos la respuesta para guardarla en caché si es JS o fuentes (CDN)
-            if (event.request.url.includes('cdn') || event.request.url.includes('fonts')) {
-                const responseToCache = response.clone();
-                caches.open(CACHE_NAME)
-                  .then(function(cache) {
-                    cache.put(event.request, responseToCache);
-                  });
-            }
+            // Cache everything that comes from our domain or CDNs to ensure full offline support
+            // This is critical for the PWA "installability" check
+            const responseToCache = response.clone();
+            caches.open(CACHE_NAME)
+              .then(function(cache) {
+                cache.put(event.request, responseToCache);
+              });
 
             return response;
           }

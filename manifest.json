@@ -2,6 +2,8 @@
   "name": "ZenPomodoro",
   "short_name": "ZenPomodoro",
   "start_url": "./",
+  "scope": "./",
+  "id": "/",
   "display": "standalone",
   "background_color": "#09090b",
   "theme_color": "#09090b",
