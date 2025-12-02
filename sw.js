@@ -1,4 +1,4 @@
-const CACHE_NAME = 'zenpomodoro-v5';
+const CACHE_NAME = 'zenpomodoro-v8';
 const urlsToCache = [
   './',
   './index.html',
@@ -41,6 +41,21 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
+  // Navigation Fallback ROBUSTO:
+  // Si es una navegación (abrir la app), SIEMPRE intentamos servir index.html del caché.
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      caches.match('./index.html').then((response) => {
+        return response || fetch(event.request);
+      }).catch(() => {
+        // Si falla todo, intentamos devolver el index.html cacheado como último recurso
+        return caches.match('./index.html');
+      })
+    );
+    return;
+  }
+
+  // Estrategia Cache First para assets
   event.respondWith(
     caches.match(event.request)
       .then(response => {
@@ -50,29 +65,20 @@ self.addEventListener('fetch', event => {
         
         return fetch(event.request).then(
           function(response) {
-            // Basic validity check
-            if(!response || response.status !== 200) {
+            if(!response || response.status !== 200 || response.type !== 'basic') {
               return response;
             }
 
-            // Important: Clone the response. A response is a stream
-            // and because we want the browser to consume the response
-            // as well as the cache consuming the response, we need
-            // to clone it so we have two streams.
             const responseToCache = response.clone();
 
             caches.open(CACHE_NAME)
               .then(function(cache) {
-                // Cache everything allowed (including cors/opaque if necessary for some resources)
-                // We use put here to cache dynamic requests
                 cache.put(event.request, responseToCache);
               });
 
             return response;
           }
-        ).catch(() => {
-            // Fallback for offline if not found in cache
-        });
+        );
       })
   );
 });

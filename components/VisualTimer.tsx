@@ -96,7 +96,7 @@ export const VisualTimer: React.FC<VisualTimerProps> = ({ timeLeft, maxTime, mod
       const height = canvas.height / (window.devicePixelRatio || 1);
       const cx = width / 2;
       const cy = height / 2;
-      const radius = Math.min(width, height) * 0.35; // Size of the container
+      const radius = Math.min(width, height) * 0.45; // Size of the container
 
       // Physics params
       timeRef.current += isActive ? 0.05 : 0.02; // Faster waves when active
@@ -166,7 +166,7 @@ export const VisualTimer: React.FC<VisualTimerProps> = ({ timeLeft, maxTime, mod
   }, [timeLeft, maxTime, isActive, colors]);
 
   return (
-    <div ref={containerRef} className="w-full h-[400px] flex items-center justify-center animate-fade-in select-none pointer-events-none">
+    <div ref={containerRef} className="w-full h-64 md:h-96 flex items-center justify-center animate-fade-in select-none pointer-events-none">
         <canvas ref={canvasRef} />
     </div>
   );
