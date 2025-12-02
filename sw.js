@@ -1,4 +1,4 @@
-const CACHE_NAME = 'zenpomodoro-v1';
+const CACHE_NAME = 'zenpomodoro-v2';
 const urlsToCache = [
   './',
   './index.html',
@@ -13,32 +13,53 @@ self.addEventListener('install', event => {
         return cache.addAll(urlsToCache);
       })
   );
-});
-
-self.addEventListener('fetch', event => {
-  event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        // Cache hit - return response
-        if (response) {
-          return response;
-        }
-        return fetch(event.request);
-      })
-  );
+  self.skipWaiting();
 });
 
 self.addEventListener('activate', event => {
-  const cacheWhitelist = [CACHE_NAME];
   event.waitUntil(
     caches.keys().then(cacheNames => {
       return Promise.all(
         cacheNames.map(cacheName => {
-          if (cacheWhitelist.indexOf(cacheName) === -1) {
+          if (cacheName !== CACHE_NAME) {
             return caches.delete(cacheName);
           }
         })
       );
     })
+  );
+  self.clients.claim();
+});
+
+self.addEventListener('fetch', event => {
+  // Estrategia: Cache First, luego Network (y actualiza caché si es un recurso externo)
+  event.respondWith(
+    caches.match(event.request)
+      .then(response => {
+        if (response) {
+          return response;
+        }
+        
+        // Si no está en caché, lo pedimos a la red
+        return fetch(event.request).then(
+          function(response) {
+            // Verificamos si la respuesta es válida
+            if(!response || response.status !== 200 || response.type !== 'basic' && response.type !== 'cors') {
+              return response;
+            }
+
+            // Clonamos la respuesta para guardarla en caché si es JS o fuentes (CDN)
+            if (event.request.url.includes('cdn') || event.request.url.includes('fonts')) {
+                const responseToCache = response.clone();
+                caches.open(CACHE_NAME)
+                  .then(function(cache) {
+                    cache.put(event.request, responseToCache);
+                  });
+            }
+
+            return response;
+          }
+        );
+      })
   );
 });
