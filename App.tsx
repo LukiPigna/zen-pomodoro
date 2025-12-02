@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Play, Pause, RotateCcw, Settings2, CheckCircle2, Clock, Download, Share } from 'lucide-react';
+import { Play, Pause, RotateCcw, Settings2, Clock, Download, Share, Eye, EyeOff } from 'lucide-react';
 import { TimerMode } from './types';
 import { TimerDisplay } from './components/TimerDisplay';
+import { VisualTimer } from './components/VisualTimer';
 
 const App: React.FC = () => {
   // --- State ---
@@ -14,6 +15,7 @@ const App: React.FC = () => {
   // Settings
   const [baseFocusTime, setBaseFocusTime] = useState<number>(25); // Minutes
   const [showSettings, setShowSettings] = useState<boolean>(false);
+  const [showVisuals, setShowVisuals] = useState<boolean>(false); // Toggle for Visual Mode
 
   // PWA Install Prompt
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -366,29 +368,41 @@ const App: React.FC = () => {
             </div>
         ) : (
             <>
-                <TimerDisplay 
-                    timeLeft={timeLeft} 
-                    maxTime={maxTime} 
-                    mode={mode}
-                />
+                {/* Main Timer Display Area */}
+                <div className="relative w-full flex flex-col items-center">
+                    {showVisuals ? (
+                        <VisualTimer 
+                            timeLeft={timeLeft} 
+                            maxTime={maxTime} 
+                            mode={mode} 
+                            isActive={isActive} 
+                        />
+                    ) : (
+                        <TimerDisplay 
+                            timeLeft={timeLeft} 
+                            maxTime={maxTime} 
+                            mode={mode}
+                        />
+                    )}
+                </div>
                 
-                <div className={`mt-16 text-sm font-medium tracking-[0.3em] uppercase opacity-40 ${getAccentColor()}`}>
+                <div className={`mt-12 text-sm font-medium tracking-[0.3em] uppercase opacity-40 ${getAccentColor()}`}>
                     {isFinished ? 'Completado' : getModeLabel()}
                 </div>
 
                 {/* Controls */}
-                <div className="mt-12 flex items-center gap-12">
-                    {!isFinished && (
-                        <button 
-                            onClick={resetSession}
-                            className={`p-4 rounded-full hover:bg-white/5 transition-colors opacity-40 hover:opacity-100 ${getAccentColor()}`}
-                            aria-label="Reiniciar Sesión"
-                            title="Reiniciar toda la sesión"
-                        >
-                            <RotateCcw size={20} strokeWidth={1.5} />
-                        </button>
-                    )}
+                <div className="mt-8 flex items-center gap-8 md:gap-12">
+                    {/* Reset Button (Left) */}
+                    <button 
+                        onClick={resetSession}
+                        disabled={isFinished}
+                        className={`p-4 rounded-full hover:bg-white/5 transition-colors opacity-40 hover:opacity-100 ${getAccentColor()} disabled:opacity-0 disabled:pointer-events-none`}
+                        aria-label="Reiniciar Sesión"
+                    >
+                        <RotateCcw size={20} strokeWidth={1.5} />
+                    </button>
                     
+                    {/* Main Play/Pause Button (Center) */}
                     <button 
                         onClick={toggleTimer}
                         className={`group relative flex items-center justify-center p-8 rounded-full border border-white/10 hover:border-white/30 transition-all active:scale-95 ${getAccentColor()}`}
@@ -396,7 +410,6 @@ const App: React.FC = () => {
                     >   
                         <div className="absolute inset-0 rounded-full bg-white/0 group-hover:bg-white/5 transition-colors"></div>
                         {isFinished ? (
-                             // Next icon
                             <Play size={32} fill="currentColor" className="ml-1 opacity-90" strokeWidth={0} />
                         ) : isActive ? (
                             <Pause size={32} fill="currentColor" className="opacity-90" strokeWidth={0} />
@@ -405,7 +418,15 @@ const App: React.FC = () => {
                         )}
                     </button>
 
-                     {!isFinished && <div className="w-[52px]"></div>}
+                    {/* Visual Mode Toggle (Right) */}
+                    <button 
+                         onClick={() => setShowVisuals(!showVisuals)}
+                         disabled={isFinished}
+                         className={`p-4 rounded-full hover:bg-white/5 transition-colors opacity-40 hover:opacity-100 ${getAccentColor()} disabled:opacity-0 disabled:pointer-events-none`}
+                         aria-label="Modo Visual"
+                    >
+                        {showVisuals ? <EyeOff size={20} strokeWidth={1.5} /> : <Eye size={20} strokeWidth={1.5} />}
+                    </button>
                 </div>
 
                 {/* Minimalist Session Indicators (Cycle) */}
