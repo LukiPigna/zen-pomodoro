@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Play, Pause, RotateCcw, Settings2, Clock, Download, Share, Eye, EyeOff } from 'lucide-react';
+import { Play, Pause, RotateCcw, Settings2, Clock, Download, Share, Eye, EyeOff, ImageDown } from 'lucide-react';
 import { TimerMode } from './types';
 import { TimerDisplay } from './components/TimerDisplay';
 import { VisualTimer } from './components/VisualTimer';
@@ -118,7 +118,7 @@ const App: React.FC = () => {
       try {
         new Notification(title, {
             body: body,
-            icon: './public/icon.svg', 
+            icon: './public/icon-192.png', 
             silent: true // We handle sound via AudioContext
         });
       } catch (e) {
@@ -229,6 +229,59 @@ const App: React.FC = () => {
     }
   };
 
+  // --- Asset Generation ---
+  const downloadIcons = () => {
+    const sizes = [192, 512];
+    
+    sizes.forEach(size => {
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        
+        if (ctx) {
+            // Draw Background (Rounded Rect)
+            ctx.fillStyle = '#09090B';
+            ctx.beginPath();
+            // Use arc for rounded corners since roundRect might not be fully supported in all canvas envs yet
+            const r = size * 0.234; // Approx 120/512 ratio
+            ctx.roundRect(0, 0, size, size, r);
+            ctx.fill();
+
+            // Draw Paths (Scaled from 512x512 original SVG logic)
+            // Original Stroke width was 40 for 512 size.
+            const scale = size / 512;
+            ctx.lineWidth = 40 * scale;
+            ctx.strokeStyle = 'white';
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            // Helper to scale coordinates
+            const s = (val: number) => val * scale;
+
+            // Path 1
+            ctx.beginPath();
+            ctx.moveTo(s(352), s(160));
+            ctx.bezierCurveTo(s(352), s(160), s(256), s(160), s(256), s(256));
+            ctx.bezierCurveTo(s(256), s(352), s(160), s(352), s(160), s(352));
+            ctx.stroke();
+
+            // Path 2
+            ctx.beginPath();
+            ctx.moveTo(s(160), s(160));
+            ctx.bezierCurveTo(s(160), s(160), s(256), s(160), s(256), s(256));
+            ctx.bezierCurveTo(s(256), s(352), s(352), s(352), s(352), s(352));
+            ctx.stroke();
+
+            // Download
+            const link = document.createElement('a');
+            link.download = `icon-${size}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+    });
+  };
+
   // --- Helpers for Display ---
 
   const getTotalStudyTime = () => {
@@ -329,7 +382,7 @@ const App: React.FC = () => {
                 </div>
 
                 {/* Install Button Logic */}
-                {deferredPrompt ? (
+                {deferredPrompt && (
                     <button 
                         onClick={handleInstallClick}
                         className={`w-full py-4 mb-4 bg-white text-black rounded-xl transition-all uppercase tracking-widest text-xs font-bold flex items-center justify-center gap-2`}
@@ -337,25 +390,16 @@ const App: React.FC = () => {
                         <Download size={16} />
                         Instalar App
                     </button>
-                ) : (
-                    // Manual Instructions
-                    <div className="mb-8 p-6 bg-white/5 rounded-2xl border border-white/5 text-left">
-                        <h3 className={`text-[10px] font-bold uppercase tracking-widest mb-4 opacity-70 flex items-center gap-2 ${getAccentColor()}`}>
-                            <Download size={12} />
-                            ¿Cómo Instalar?
-                        </h3>
-                        {isIOS ? (
-                             <p className={`text-xs opacity-60 leading-relaxed ${getAccentColor()}`}>
-                                Para instalar en iPhone/iPad: toca el botón <span className="inline-flex items-center gap-1 bg-white/10 px-1.5 py-0.5 rounded mx-1"><Share size={10} /> Compartir</span> en Safari y selecciona <span className="font-bold text-white/90">"Agregar al Inicio"</span>.
-                            </p>
-                        ) : (
-                             <p className={`text-xs opacity-60 leading-relaxed ${getAccentColor()}`}>
-                                Si el botón no aparece: toca los <span className="font-bold text-white/90">3 puntos</span> del menú de Chrome y elige <span className="font-bold text-white/90">"Instalar aplicación"</span>.
-                            </p>
-                        )}
-                       
-                    </div>
                 )}
+                
+                {/* Asset Download Button (Temporary for Developer) */}
+                <button 
+                    onClick={downloadIcons}
+                    className={`w-full py-4 mb-8 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-xl transition-all uppercase tracking-widest text-xs font-bold flex items-center justify-center gap-2`}
+                >
+                    <ImageDown size={16} />
+                    Descargar Assets (PNG)
+                </button>
 
                 <button 
                     onClick={() => {

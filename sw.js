@@ -1,13 +1,15 @@
-const CACHE_NAME = 'zenpomodoro-v4';
+const CACHE_NAME = 'zenpomodoro-v5';
 const urlsToCache = [
   './',
   './index.html',
   './manifest.json',
-  './public/icon.svg',
+  './public/icon-192.png',
+  './public/icon-512.png',
   './index.tsx',
   './App.tsx',
   './types.ts',
   './components/TimerDisplay.tsx',
+  './components/VisualTimer.tsx',
   // Cache external resources required for initial render
   'https://cdn.tailwindcss.com', 
   'https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap'
@@ -70,7 +72,6 @@ self.addEventListener('fetch', event => {
           }
         ).catch(() => {
             // Fallback for offline if not found in cache
-            // (Optional: could return a custom offline page here)
         });
       })
   );
