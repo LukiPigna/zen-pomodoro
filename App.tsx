@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Play, Pause, RotateCcw, Settings2, CheckCircle2, Clock, Download } from 'lucide-react';
+import { Play, Pause, RotateCcw, Settings2, CheckCircle2, Clock, Download, Share } from 'lucide-react';
 import { TimerMode } from './types';
 import { TimerDisplay } from './components/TimerDisplay';
 
@@ -17,6 +17,7 @@ const App: React.FC = () => {
 
   // PWA Install Prompt
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isIOS, setIsIOS] = useState<boolean>(false);
   
   // Audio Context for Beep
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -38,6 +39,12 @@ const App: React.FC = () => {
   const maxTime = durations[mode];
 
   // --- Effects ---
+
+  // Check if iOS
+  useEffect(() => {
+    const isIosDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+    setIsIOS(isIosDevice);
+  }, []);
 
   // PWA Install Event Listener
   useEffect(() => {
@@ -109,7 +116,7 @@ const App: React.FC = () => {
       try {
         new Notification(title, {
             body: body,
-            icon: '/public/icon.svg', 
+            icon: './public/icon.svg', 
             silent: true // We handle sound via AudioContext
         });
       } catch (e) {
@@ -282,7 +289,7 @@ const App: React.FC = () => {
       <main className="flex-1 flex flex-col items-center justify-center w-full max-w-md px-6 z-10 pb-20">
         
         {showSettings ? (
-            <div className="w-full animate-fade-in">
+            <div className="w-full animate-fade-in overflow-y-auto max-h-[80vh] no-scrollbar">
                 <h2 className={`text-3xl font-light mb-12 text-center ${getAccentColor()}`}>Configuración</h2>
                 
                 <div className="mb-12">
@@ -319,8 +326,8 @@ const App: React.FC = () => {
                      </div>
                 </div>
 
-                {/* Install Button (Only visible if prompt is available) */}
-                {deferredPrompt && (
+                {/* Install Button Logic */}
+                {deferredPrompt ? (
                     <button 
                         onClick={handleInstallClick}
                         className={`w-full py-4 mb-4 bg-white text-black rounded-xl transition-all uppercase tracking-widest text-xs font-bold flex items-center justify-center gap-2`}
@@ -328,6 +335,24 @@ const App: React.FC = () => {
                         <Download size={16} />
                         Instalar App
                     </button>
+                ) : (
+                    // Manual Instructions
+                    <div className="mb-8 p-6 bg-white/5 rounded-2xl border border-white/5 text-left">
+                        <h3 className={`text-[10px] font-bold uppercase tracking-widest mb-4 opacity-70 flex items-center gap-2 ${getAccentColor()}`}>
+                            <Download size={12} />
+                            ¿Cómo Instalar?
+                        </h3>
+                        {isIOS ? (
+                             <p className={`text-xs opacity-60 leading-relaxed ${getAccentColor()}`}>
+                                Para instalar en iPhone/iPad: toca el botón <span className="inline-flex items-center gap-1 bg-white/10 px-1.5 py-0.5 rounded mx-1"><Share size={10} /> Compartir</span> en Safari y selecciona <span className="font-bold text-white/90">"Agregar al Inicio"</span>.
+                            </p>
+                        ) : (
+                             <p className={`text-xs opacity-60 leading-relaxed ${getAccentColor()}`}>
+                                Si el botón no aparece: toca los <span className="font-bold text-white/90">3 puntos</span> del menú de Chrome y elige <span className="font-bold text-white/90">"Instalar aplicación"</span>.
+                            </p>
+                        )}
+                       
+                    </div>
                 )}
 
                 <button 
