@@ -1,7 +1,7 @@
 {
   "name": "ZenPomodoro",
   "short_name": "ZenPomodoro",
-  "start_url": "./index.html",
+  "start_url": ".",
   "scope": "./",
   "id": "/",
   "display": "standalone",

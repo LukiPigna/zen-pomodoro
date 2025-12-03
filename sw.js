@@ -1,4 +1,4 @@
-const CACHE_NAME = 'zenpomodoro-v8';
+const CACHE_NAME = 'zenpomodoro-v9-fix';
 const urlsToCache = [
   './',
   './index.html',
@@ -41,23 +41,23 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
-  // Navigation Fallback ROBUSTO:
-  // Si es una navegación (abrir la app), SIEMPRE intentamos servir index.html del caché.
+  // Navigation Fallback ROBUSTO (Offline-First para HTML):
+  // Si es una navegación (abrir la app), SIEMPRE servimos index.html del caché.
   if (event.request.mode === 'navigate') {
     event.respondWith(
-      caches.match('./index.html').then((response) => {
+      caches.match('./index.html', {ignoreSearch: true}).then((response) => {
         return response || fetch(event.request);
       }).catch(() => {
-        // Si falla todo, intentamos devolver el index.html cacheado como último recurso
-        return caches.match('./index.html');
+        // Si falla todo (offline total), devolvemos el index.html cacheado
+        return caches.match('./index.html', {ignoreSearch: true});
       })
     );
     return;
   }
 
-  // Estrategia Cache First para assets
+  // Estrategia Stale-While-Revalidate / Cache First modificada
   event.respondWith(
-    caches.match(event.request)
+    caches.match(event.request, {ignoreSearch: true})
       .then(response => {
         if (response) {
           return response;
@@ -65,7 +65,10 @@ self.addEventListener('fetch', event => {
         
         return fetch(event.request).then(
           function(response) {
-            if(!response || response.status !== 200 || response.type !== 'basic') {
+            // CORRECCIÓN IMPORTANTE:
+            // Permitimos caching de 'basic' (mismo origen) Y 'cors' (Tailwind/Fuentes/Iconos externos)
+            // Antes se bloqueaba 'cors', impidiendo que Tailwind funcionara offline.
+            if(!response || response.status !== 200 || (response.type !== 'basic' && response.type !== 'cors')) {
               return response;
             }
 
@@ -78,7 +81,10 @@ self.addEventListener('fetch', event => {
 
             return response;
           }
-        );
+        ).catch(err => {
+            // Si falla el fetch de un recurso y no está en caché, no podemos hacer mucho más que fallar silenciosamente o devolver un placeholder
+            console.log('Fetch failed:', err);
+        });
       })
   );
 });
